@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>crow g@mes</title>
+  <meta name="description" content="Play games online with a fast, dark-themed game library. Search and browse games from the left sidebar.">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="theme-color" content="#0a0a0a">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="crow games | Free Online Games">
+  <meta property="og:description" content="Browse and play games online in a fast, dark-themed game library.">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="crow games | Free Online Games">
+  <meta name="twitter:description" content="Browse and play games online in a fast, dark-themed game library.">
+
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg:#0a0a0a; --panel:#111; --panel-hover:#181818;
+      --border:#252525; --text:#f2f2f2; --muted:#999;
+    }
+    * { box-sizing:border-box; }
+    html,body { min-height:100%; }
+    body {
+      margin:0; background:var(--bg); color:var(--text);
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    }
+    .layout { display:flex; min-height:100vh; }
+    .sidebar {
+      position:sticky; top:0; width:280px; height:100vh; flex:0 0 280px;
+      display:flex; flex-direction:column; gap:18px; padding:20px;
+      background:var(--panel); border-right:1px solid var(--border); overflow-y:auto;
+    }
+    .brand { margin:0; font-size:1.25rem; font-weight:700; }
+    .sidebar-section { display:grid; gap:9px; }
+    .search-wrap label,.sidebar-heading {
+      color:var(--muted); font-size:.75rem; font-weight:600;
+      text-transform:uppercase; letter-spacing:.08em;
+    }
+    .search-wrap label { margin-bottom:0; }
+    .sidebar-heading { margin:0; }
+    #game-search {
+      width:100%; padding:11px 12px; color:var(--text); background:#0b0b0b;
+      border:1px solid var(--border); border-radius:8px; outline:none;
+    }
+    #game-search:focus { border-color:#555; box-shadow:0 0 0 2px rgba(255,255,255,.06); }
+    .page-nav,.cookie-actions { display:grid; gap:8px; }
+    .page-nav button,.cookie-actions button {
+      width:100%; padding:10px 12px; color:var(--text); background:#161616;
+      border:1px solid var(--border); border-radius:7px; cursor:pointer; text-align:left;
+    }
+    .page-nav button:hover,.cookie-actions button:hover { background:var(--panel-hover); border-color:#444; }
+    .page-nav button[aria-current="page"] { background:#202020; border-color:#555; }
+    .cookie-status { margin:0; color:var(--muted); font-size:.75rem; line-height:1.4; }
+    .main { min-width:0; flex:1; padding:24px; }
+    .main-header { max-width:1100px; margin:0 auto 20px; }
+    .main-header h1 { margin:0 0 6px; font-size:clamp(1.6rem,3vw,2.25rem); }
+    .main-header p { margin:0; color:var(--muted); }
+    #games { max-width:1100px; margin:0 auto; }
+    @media (max-width:700px) {
+      .layout { display:block; }
+      .sidebar { position:static; width:100%; height:auto; border-right:0; border-bottom:1px solid var(--border); }
+      .page-nav { grid-template-columns:repeat(2,1fr); }
+      .main { padding:16px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="layout">
+    <aside class="sidebar" aria-label="g@me navigation">
+      <h2 class="brand">crow games</h2>
+
+      <section class="search-wrap sidebar-section" aria-labelledby="search-heading">
+        <label id="search-heading" for="game-search">Search games</label>
+        <input id="game-search" type="search" placeholder="Search..." autocomplete="off">
+      </section>
+
+      <section class="sidebar-section" aria-labelledby="cookies-heading">
+        <h3 id="cookies-heading" class="sidebar-heading">Save Data</h3>
+        <div class="cookie-actions">
+          <button id="export-cookies" type="button">Download saves</button>
+          <button id="import-cookies" type="button">Import saves</button>
+          <input id="cookie-file" type="file" accept=".json,application/json" hidden>
+        </div>
+        <p id="cookie-status" class="cookie-status" role="status">
+        </p>
+      </section>
+    </aside>
+
+    <main class="main">
+      <header class="main-header">
+        <h1>free games</h1>
+        <p>play them fr</p>
+      </header>
+      <div id="games" aria-label="Game library"></div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/gh/luminsdk/script@latest/lumin.min.js"></script>
+  <script>
+    const cookieStatus = document.getElementById('cookie-status');
+    const cookieFile = document.getElementById('cookie-file');
+
+    function getCookies() {
+      return document.cookie.split('; ').filter(Boolean).reduce((cookies, pair) => {
+        const index = pair.indexOf('=');
+        if (index === -1) return cookies;
+        cookies[decodeURIComponent(pair.slice(0,index))] =
+          decodeURIComponent(pair.slice(index + 1));
+        return cookies;
+      }, {});
+    }
+
+    function setCookie(name, value) {
+      document.cookie = encodeURIComponent(name) + '=' + encodeURIComponent(value) +
+        '; path=/; SameSite=Lax';
+    }
+
+    document.getElementById('export-cookies').addEventListener('click', () => {
+      const cookies = getCookies();
+      const blob = new Blob([JSON.stringify(cookies, null, 2)], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'page-cookies.json';
+      link.click();
+      URL.revokeObjectURL(url);
+      cookieStatus.textContent = Object.keys(cookies).length + ' accessible cookie(s) exported.';
+    });
+
+    document.getElementById('import-cookies').addEventListener('click', () => cookieFile.click());
+
+    cookieFile.addEventListener('change', async event => {
+      const file = event.target.files[0];
+      if (!file) return;
+      try {
+        const imported = JSON.parse(await file.text());
+        if (!imported || Array.isArray(imported) || typeof imported !== 'object')
+          throw new Error('Cookie file must contain a JSON object.');
+
+        let count = 0;
+        for (const [name,value] of Object.entries(imported)) {
+          if (typeof value !== 'string') continue;
+          setCookie(name,value);
+          count++;
+        }
+        cookieStatus.textContent =
+          count + ' cookie(s) imported. Reload the page if the game library needs them immediately.';
+      } catch (error) {
+        cookieStatus.textContent = 'Could not import cookies: ' + error.message;
+      } finally {
+        event.target.value = '';
+      }
+    });
+
+    document.getElementById('game-search').addEventListener('input', event => {
+      const query = event.target.value.trim().toLowerCase();
+      document.querySelectorAll('#games article, #games [class*="card"], #games [class*="game"]')
+        .forEach(card => {
+          const text = card.textContent.toLowerCase();
+          card.hidden = query !== '' && !text.includes(query);
+        });
+    });
+
+    document.querySelectorAll('.page-nav button').forEach(button => {
+      button.addEventListener('click', () => {
+        document.querySelectorAll('.page-nav button')
+          .forEach(item => item.removeAttribute('aria-current'));
+        button.setAttribute('aria-current','page');
+        document.getElementById('games').scrollIntoView({behavior:'smooth'});
+      });
+    });
+
+    Lumin.init({
+      container:'#games',
+      theme:'dark',
+      onReady:() => console.log('LuminSDK is ready'),
+      onError:err => console.error('LuminSDK error:',err),
+    });
+  </script>
+</body>
+</html>
